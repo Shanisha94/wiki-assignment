@@ -3,27 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FastAPI Results</title>
+    <title>Animal Database</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
-        table { width: 50%; margin: auto; border-collapse: collapse; }
-        th, td { padding: 10px; border: 1px solid black; text-align: center; }
-        th { background-color: #f2f2f2; }
+        body { font-family: Arial, sans-serif; margin: 20px; text-align: center; }
+        h1, h2 { color: #333; }
+        table { width: 90%; margin: auto; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f4f4f4; }
+        img { width: 100px; height: auto; border-radius: 8px; }
+        .center { text-align: center; }
+        .refresh-btn {
+            background-color: #4CAF50; /* Green */
+            color: white;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .refresh-btn:hover { background-color: #45a049; }
+        .loading { display: none; font-size: 16px; color: #ff0000; margin-top: 10px; }
     </style>
 </head>
 <body>
-    <h1>Python Data in FastAPI HTML</h1>
+
+    <h1>🐾 Animal Database 🦁</h1>
+
+    <!-- Refresh Button -->
+    <button class="refresh-btn" onclick="refreshData()">🔄 Refresh Data</button>
+    <p id="loading-message" class="loading">Refreshing data... Please wait.</p>
+
+    <h2>Animal Information Table</h2>
     <table>
-        <tr>
-            <th>Index</th>
-            <th>Value</th>
-        </tr>
-        {% for index, value in data.items() %}
-        <tr>
-            <td>{{ index }}</td>
-            <td>{{ value }}</td>
-        </tr>
-        {% endfor %}
+        <thead>
+            <tr>
+                <th>Animal Name</th>
+                <th>Collateral Adjectives</th>
+                <th>Image</th>
+                <th>Local Path</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for image_url, animal in animal_images.items() %}
+                <tr>
+                    <td><strong>{{ animal }}</strong></td>
+
+                    <!-- Get collateral adjectives -->
+                    <td>
+                        {% set adjectives = [] %}
+                        {% for adjective, animals in adjective_to_animals.items() %}
+                            {% if animal in animals %}
+                                {% set _ = adjectives.append(adjective) %}
+                            {% endif %}
+                        {% endfor %}
+                        {{ ", ".join(adjectives) if adjectives else "N/A" }}
+                    </td>
+
+                    <!-- Image -->
+                    <td class="center">
+                        <img src="{{ image_url }}" alt="{{ animal }}">
+                    </td>
+
+                    <!-- Local Path -->
+                    <td>{{ local_paths.get(animal, "N/A") }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
     </table>
+
+    <script>
+        function refreshData() {
+            const refreshButton = document.querySelector(".refresh-btn");
+            const loadingMessage = document.getElementById("loading-message");
+
+            // Show loading message
+            loadingMessage.style.display = "block";
+            refreshButton.disabled = true;
+
+            // Send POST request to refresh API
+            fetch("/refresh", { method: "POST" })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data.message);
+                    setTimeout(() => {
+                        location.reload(); // Reload the page after 5 seconds
+                    }, 5000);
+                })
+                .catch(error => {
+                    console.error("Error refreshing data:", error);
+                    loadingMessage.textContent = "Error refreshing data. Try again.";
+                    refreshButton.disabled = false;
+                });
+        }
+    </script>
+
 </body>
 </html>

@@ -1,5 +1,9 @@
 import asyncio
+from typing import Any, Coroutine
+
 import aiohttp
+from yarl import URL
+
 
 class AsyncHttpClient:
     def __init__(self, max_connections: int = 10):
@@ -17,16 +21,26 @@ class AsyncHttpClient:
         """Ensure session closure."""
         await self.session.close()
 
-    async def fetch(self, url: str):
-        """
-        Fetch a URL and store its response in the queue.
-        """
+    async def fetch(self, url: str, is_image=False) -> tuple[str, str] | tuple[URL, bytes] | str:
+        """Fetch a URL and return its response or error."""
+        print(f"[AsyncHttpClient] Fetching {url}")
+
         try:
-            async with self.session.get(url) as response:
-                text = await response.read()
-                await self.queue.put((url, text))  # Store result in the queue
+            async with self.session.get(url, timeout=30) as response:
+                if is_image:
+                    content = await response.read()
+                    self.queue.put_nowait((url, content))
+                    return response.url, content
+                text = await response.text()
+                print(f"[AsyncHttpClient] Received response from {url}")
+                self.queue.put_nowait((url, text))
+                return url, text
+        except asyncio.TimeoutError:
+            print(f"[AsyncHttpClient] Timeout fetching {url}")
+            return "Error: Timeout"
         except Exception as e:
-            await self.queue.put((url, f"Error: {str(e)}"))  # Store error response
+            print(f"[AsyncHttpClient] Failed to fetch {url}: {e}")
+            return f"Error: {e}", ''
 
     async def get_result(self):
         """
@@ -35,9 +49,13 @@ class AsyncHttpClient:
         """
         return await self.queue.get()  # Get the next available item (FIFO behavior)
 
-    async def submit_urls(self, urls):
+    async def get_results(self, batch_size: int = 5):
+        """Fetch multiple results asynchronously."""
+        return await asyncio.gather(*[self.get_result() for _ in range(batch_size)])
+
+    async def submit_urls(self, urls, is_image=False):
         """
         Fetch multiple URLs concurrently.
         """
-        tasks = [self.fetch(url) for url in urls]
+        tasks = [self.fetch(url, is_image=is_image) for url in urls]
         await asyncio.gather(*tasks)
