@@ -1,5 +1,5 @@
 import pytest
-from db.animals_db import AnimalsInMemoryDB  # Replace with the actual module name
+from db.animals_db import AnimalsInMemoryDB
 
 @pytest.fixture
 def db():
