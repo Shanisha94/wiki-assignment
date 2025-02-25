@@ -1,3 +1,5 @@
+![Build Status](https://github.com/Shanisha94/wiki-assignment/actions/workflows/pytest.yml/badge.svg)
+
 # 🦁 Wiki Assignment
 
 Wiki Assignment is a Python-based web scraper that:
