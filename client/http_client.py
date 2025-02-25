@@ -1,6 +1,6 @@
 """An async client"""
 import asyncio
-
+import logging
 import aiohttp
 from yarl import URL
 
@@ -13,6 +13,7 @@ class AsyncHttpClient:
         self.session: aiohttp.ClientSession = None
         self.max_connections = max_connections
         self.queue = asyncio.Queue()  # Queue to store responses
+        self._logger = logging.getLogger(__name__)
 
     async def __aenter__(self):
         """Initialize the session with connection pooling."""
@@ -28,7 +29,7 @@ class AsyncHttpClient:
         self, url: str, is_image=False
     ) -> tuple[str, str] | tuple[URL, bytes] | str:
         """Fetch a URL and return its response or error."""
-        print(f"[AsyncHttpClient] Fetching {url}")
+        self._logger.debug(f"Fetching {url}")
 
         try:
             async with self.session.get(url, timeout=30) as response:
@@ -37,14 +38,14 @@ class AsyncHttpClient:
                     self.queue.put_nowait((url, content))
                     return response.url, content
                 text = await response.text()
-                print(f"[AsyncHttpClient] Received response from {url}")
+                self._logger.debug(f"Received response from {url}")
                 self.queue.put_nowait((url, text))
                 return url, text
         except asyncio.TimeoutError:
-            print(f"[AsyncHttpClient] Timeout fetching {url}")
+            self._logger.error(f"Timeout fetching {url}")
             return "Error: Timeout"
         except Exception as e: # pylint: disable=broad-exception-caught
-            print(f"[AsyncHttpClient] Failed to fetch {url}: {e}")
+            self._logger.error(f"Failed to fetch {url}: {e}")
             return f"Error: {e}", ""
 
     async def get_result(self):

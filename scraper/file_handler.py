@@ -3,9 +3,7 @@ import logging
 import random
 import tempfile
 from pathlib import Path
-
 import aiofiles
-
 from client.http_client import AsyncHttpClient
 from db.animals_db import AnimalsInMemoryDB
 from scraper.web_scraper import WebScraper
@@ -37,13 +35,13 @@ class FileHandler(WebScraper):
 
     async def run(self):
         """Ensure FileHandler waits for image URLs before processing."""
-        self._logger.info("[FileHandler] Waiting for data in queue...")
+        self._logger.debug("Waiting for data in queue...")
 
         # Wait until the queue has at least 1 item
         while self._http_client.queue.empty():
             await asyncio.sleep(1)
 
-        self._logger.info("[FileHandler] Starting processing as data is available")
+        self._logger.info("Starting processing as data is available")
 
         async with asyncio.TaskGroup() as tg:
             tg.create_task(self._fetch_images())
@@ -53,13 +51,13 @@ class FileHandler(WebScraper):
             await self._queue.join()  # Ensure all queued images are processed
 
             self._logger.info(
-                "[FileHandler] Queue fully processed, stopping workers..."
+                "Queue fully processed, stopping workers..."
             )
 
             self._stop_event.set()
             await asyncio.gather(*workers)
 
-        self._logger.info("[FileHandler] Exiting run()")
+        self._logger.info("Exiting run()")
 
     async def _fetch_images(self):
         """Fetch images asynchronously in small batches to improve performance."""
@@ -93,7 +91,7 @@ class FileHandler(WebScraper):
             except asyncio.TimeoutError:
                 attempts += 1
                 if attempts >= MAX_ATTEMPTS:
-                    logging.error("[FileHandler] Max retry attempts reached, giving up")
+                    logging.error("Max retry attempts reached, giving up")
                     break
                 await asyncio.sleep(backoff + random.uniform(0, 0.5))
                 backoff *= BACKOFF_MULTIPLIER
@@ -102,7 +100,7 @@ class FileHandler(WebScraper):
             await self._save_image_locally(*item)
             self._queue.task_done()
 
-        self._logger.info("[FileHandler] Exiting _image_worker")
+        self._logger.debug("Exiting _image_worker")
 
     async def _save_image_locally(self, image_url: str, image_data: bytes) -> None:
         """Downloads and saves an image asynchronously with minimal blocking."""
@@ -130,6 +128,6 @@ class FileHandler(WebScraper):
         try:
             async with aiofiles.open(file_path, "wb") as file:
                 await file.write(file_data)
-            self._logger.info(f"Image saved at {file_path}")
+            self._logger.debug(f"Image saved at {file_path}")
         except Exception as e:
             self._logger.error(f"Failed to save image {file_path}: {e}")
