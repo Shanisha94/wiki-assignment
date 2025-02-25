@@ -37,14 +37,12 @@ class FileHandler(WebScraper):
 
     async def run(self):
         """Ensure FileHandler waits for image URLs before processing."""
-        print("[FileHandler] Waiting for data in queue...")
         self._logger.info("[FileHandler] Waiting for data in queue...")
 
         # Wait until the queue has at least 1 item
         while self._http_client.queue.empty():
             await asyncio.sleep(1)
 
-        print("[FileHandler] Starting processing as data is available")
         self._logger.info("[FileHandler] Starting processing as data is available")
 
         async with asyncio.TaskGroup() as tg:
@@ -54,7 +52,6 @@ class FileHandler(WebScraper):
 
             await self._queue.join()  # Ensure all queued images are processed
 
-            print("[FileHandler] Queue fully processed, stopping workers...")
             self._logger.info(
                 "[FileHandler] Queue fully processed, stopping workers..."
             )
@@ -62,7 +59,6 @@ class FileHandler(WebScraper):
             self._stop_event.set()
             await asyncio.gather(*workers)
 
-        print("[FileHandler] Exiting run()")
         self._logger.info("[FileHandler] Exiting run()")
 
     async def _fetch_images(self):
@@ -106,7 +102,6 @@ class FileHandler(WebScraper):
             await self._save_image_locally(*item)
             self._queue.task_done()
 
-        print("[FileHandler] Exiting _image_worker")
         self._logger.info("[FileHandler] Exiting _image_worker")
 
     async def _save_image_locally(self, image_url: str, image_data: bytes) -> None:

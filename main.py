@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 
 from db.animals_db import AnimalsInMemoryDB
 from client.http_client import AsyncHttpClient
+from logger.logging_setup import setup_logging
 from scraper.animal_page_scraper import AnimalPageScraper
 from scraper.file_handler import FileHandler
 from scraper.table_scraper import AnimalTableScraper
@@ -38,7 +39,7 @@ async def scrape_data():
         page_scraper = AnimalPageScraper(
             client, client_image, db, queue_animals_pages, queue_images
         )
-        file_handler = FileHandler(client_image, db, queue_images)
+        file_handler = FileHandler(client_image, db)
 
         print("Initialized scrapers")
 
@@ -79,6 +80,7 @@ async def refresh_data(background_tasks: BackgroundTasks):
 
 async def main():
     """Runs the scraper and then starts the web server."""
+    setup_logging()
     await scrape_data()  # First, scrape and populate the database
 
     print("Starting FastAPI server on http://127.0.0.1:8000")
