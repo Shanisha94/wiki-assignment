@@ -6,7 +6,6 @@ animal pages using asynchronous HTTP requests and an in-memory database.
 
 import asyncio
 import logging
-import random
 from typing import Optional
 
 from bs4 import BeautifulSoup
@@ -80,7 +79,7 @@ class AnimalPageScraper(WebScraper):
                 for url, response in results:
                     if not url or not response:
                         self._logger.warning(
-                            "[AnimalPageScraper] Invalid result received: %s", result
+                            "[AnimalPageScraper] Invalid results received: %s", results
                         )
                         continue
                     await self._output_queue.put((url, response))

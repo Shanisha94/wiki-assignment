@@ -59,9 +59,9 @@ async def homepage(request: Request):
         "index.html",
         {
             "request": request,
-            "adjective_to_animals": db._collateral_adjectives_to_animals,
-            "animal_images": db._animal_image_urls,
-            "local_paths": db._animal_images_local_paths,
+            "adjective_to_animals": db.collateral_adjectives_to_animals,
+            "animal_images": db.animal_image_urls,
+            "local_paths": db.animal_images_local_paths,
         },
     )
 

@@ -90,3 +90,15 @@ class AnimalsInMemoryDB:
             print("  (No data)")
 
         print("\n===================================")
+
+    @property
+    def collateral_adjectives_to_animals(self):
+        return self._collateral_adjectives_to_animals
+
+    @property
+    def animal_image_urls(self):
+        return self._animal_image_urls
+
+    @property
+    def animal_images_local_paths(self):
+        return self._animal_images_local_paths

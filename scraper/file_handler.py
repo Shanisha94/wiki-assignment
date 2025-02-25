@@ -1,13 +1,14 @@
 import asyncio
+import logging
 import random
 import tempfile
 from pathlib import Path
-import aiofiles
-from db.animals_db import AnimalsInMemoryDB
-from client.http_client import AsyncHttpClient
-import logging
-from scraper.web_scraper import WebScraper
 
+import aiofiles
+
+from client.http_client import AsyncHttpClient
+from db.animals_db import AnimalsInMemoryDB
+from scraper.web_scraper import WebScraper
 
 MAX_ATTEMPTS = 5  # Maximum number of retry attempts
 INITIAL_BACKOFF = 1  # Initial backoff time in seconds

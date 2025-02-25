@@ -1,9 +1,10 @@
 import asyncio
 import logging
-import aiohttp
+
 from bs4 import BeautifulSoup
-from db.animals_db import AnimalsInMemoryDB
+
 from client.http_client import AsyncHttpClient
+from db.animals_db import AnimalsInMemoryDB
 from scraper.web_scraper import WebScraper
 
 # Configure logging
@@ -59,7 +60,7 @@ class AnimalTableScraper(WebScraper):
         """Fetches the Wikipedia page and parses it using BeautifulSoup."""
         self._logger.info("Fetching Wikipedia page")
         try:
-            url, response = await self._http_client.fetch(self.URL)
+            _, response = await self._http_client.fetch(self.URL)
 
             if not response or response.startswith("Error:"):  # Check for failure
                 raise ValueError(f"Failed to retrieve page content: {response}")

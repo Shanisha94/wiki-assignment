@@ -1,0 +1,36 @@
+[tool.pylint.main]
+ignore-patterns = ['^\\.#']
+
+[tool.pylint.basic]
+no-docstring-rgx = '^_'
+
+[tool.pylint.'messages control']
+disable=
+    too-many-instance-attributes,
+    len-as-condition,
+    too-few-public-methods,
+    anomalous-backslash-in-string,
+    no-else-return,
+    simplifiable-if-statement,
+    too-many-arguments,
+    duplicate-code,
+    no-name-in-module,
+    no-member,
+    raw-checker-failed,
+    bad-inline-option,
+    locally-disabled,
+    file-ignored,
+    suppressed-message,
+    useless-suppression,
+    deprecated-pragma,
+    import-error,
+    missing-docstring,
+    invalid-name,
+    consider-using-enumerate,
+    too-many-positional-arguments,
+    broad-exception-caught,
+    logging-fstring-interpolation,
+    global-statement
+
+[tool.pylint.variables]
+ignored-argument-names = '_.*|^ignored_|^unused_'
