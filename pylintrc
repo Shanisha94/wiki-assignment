@@ -1,8 +1,8 @@
 [tool.pylint.main]
-ignore-patterns = ['^\\.#', 'tests/.*', 'test_.*\\.py']
+ignore-patterns = ^\\.#, tests/.*, test_.*\\.py
 
 [tool.pylint.basic]
-no-docstring-rgx = '^_'
+no-docstring-rgx = ^_
 
 [tool.pylint.'messages control']
 disable=
@@ -33,7 +33,7 @@ disable=
     global-statement
 
 [tool.pylint.variables]
-ignored-argument-names = '_.*|^ignored_|^unused_'
+ignored-argument-names = _.*|^ignored_|^unused_
 
 [tool.pylint.reports]
 output-format=colorized
@@ -48,4 +48,4 @@ max-statements=50
 max-attributes=10
 
 [tool.pylint.master]
-ignore=test_*.py, tests
+ignore = test_*.py, tests
