@@ -1,4 +1,5 @@
 ![Build Status](https://github.com/Shanisha94/wiki-assignment/actions/workflows/pytest.yml/badge.svg)
+![Build Status](https://github.com/Shanisha94/wiki-assignment/actions/workflows/pylint.yml/badge.svg)
 
 # 🦁 Wiki Assignment
 

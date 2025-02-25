@@ -1,4 +1,5 @@
 """An async client"""
+
 import asyncio
 import logging
 import aiohttp
@@ -9,6 +10,7 @@ class AsyncHttpClient:
     """
     An asynchronous http client.
     """
+
     def __init__(self, max_connections: int = 10):
         self.session: aiohttp.ClientSession = None
         self.max_connections = max_connections
@@ -44,7 +46,7 @@ class AsyncHttpClient:
         except asyncio.TimeoutError:
             self._logger.error(f"Timeout fetching {url}")
             return "Error: Timeout"
-        except Exception as e: # pylint: disable=broad-exception-caught
+        except Exception as e:  # pylint: disable=broad-exception-caught
             self._logger.error(f"Failed to fetch {url}: {e}")
             return f"Error: {e}", ""
 

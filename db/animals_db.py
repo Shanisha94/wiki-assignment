@@ -4,6 +4,7 @@ The database maintains mappings between animals and their associated collateral 
 image file paths, and image URLs. This can serve as a temporary storage solution for
 applications that require fast lookups and insertions without a persistent database.
 """
+
 from collections import defaultdict
 
 
@@ -22,7 +23,9 @@ class AnimalsInMemoryDB:
 
     def __init__(self):
         """Initializes the in-memory database with empty data structures."""
-        self._collateral_adjectives_to_animals: defaultdict[str, list[str]] = defaultdict(list)
+        self._collateral_adjectives_to_animals: defaultdict[str, list[str]] = (
+            defaultdict(list)
+        )
         self._animal_images_local_paths: dict[str, str] = {}
         self._animal_image_urls: dict[str, str] = {}
 

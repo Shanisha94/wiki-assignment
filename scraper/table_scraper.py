@@ -38,9 +38,7 @@ class AnimalTableScraper(WebScraper):
         if soup:
             await self._scrap_animal_table(soup)
 
-        self._logger.info(
-            "Finished processing, setting stop event."
-        )
+        self._logger.info("Finished processing, setting stop event.")
 
         self._stop_event.set()  # Ensure this scraper stops
 

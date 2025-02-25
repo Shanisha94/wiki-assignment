@@ -22,13 +22,13 @@ class AnimalPageScraper(WebScraper):
     """Scrapes animal pages asynchronously and processes images."""
 
     def __init__(
-            self,
-            http_client: AsyncHttpClient,
-            http_client_image: AsyncHttpClient,
-            db: AnimalsInMemoryDB,
-            input_queue: Optional[asyncio.Queue] = None,
-            output_queue: Optional[asyncio.Queue] = None,
-            max_concurrent_requests: int = 10,
+        self,
+        http_client: AsyncHttpClient,
+        http_client_image: AsyncHttpClient,
+        db: AnimalsInMemoryDB,
+        input_queue: Optional[asyncio.Queue] = None,
+        output_queue: Optional[asyncio.Queue] = None,
+        max_concurrent_requests: int = 10,
     ):
         super().__init__()
         self._logger = logging.getLogger(__name__)
@@ -67,20 +67,14 @@ class AnimalPageScraper(WebScraper):
             try:
                 results = await self._http_client_animal_page.get_results(batch_size=10)
                 if not results:
-                    self._logger.warning(
-                        "No results received, stopping fetch loop."
-                    )
+                    self._logger.warning("No results received, stopping fetch loop.")
                     break
 
-                self._logger.info(
-                    f"Fetched {len(results)} animal pages"
-                )
+                self._logger.info(f"Fetched {len(results)} animal pages")
 
                 for url, response in results:
                     if not url or not response:
-                        self._logger.warning(
-                            f"Invalid results received: {results}"
-                        )
+                        self._logger.warning(f"Invalid results received: {results}")
                         continue
                     await self._output_queue.put((url, response))
                     self._input_queue.task_done()
@@ -133,7 +127,9 @@ class AnimalPageScraper(WebScraper):
         except Exception as exc:
             self._logger.error(f"Failed to submit image URL {image_url}: {exc}")
 
-    async def _extract_image_url(self, html_page: str, animal_name: str) -> Optional[str]:
+    async def _extract_image_url(
+        self, html_page: str, animal_name: str
+    ) -> Optional[str]:
         """Extracts the first available image URL from the page."""
         self._logger.debug(f"Fetching image for {animal_name}")
         if not html_page:

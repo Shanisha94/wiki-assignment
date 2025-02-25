@@ -30,7 +30,8 @@ disable=
     too-many-positional-arguments,
     broad-exception-caught,
     logging-fstring-interpolation,
-    global-statement
+    global-statement,
+    redefined-outer-name
 
 [tool.pylint.variables]
 ignored-argument-names = _.*|^ignored_|^unused_

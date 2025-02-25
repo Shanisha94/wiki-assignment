@@ -1,8 +1,9 @@
 import asyncio
-import pytest
 from unittest.mock import AsyncMock, patch
-import aiohttp
+
+import pytest
 from yarl import URL
+
 from client.http_client import AsyncHttpClient
 
 
@@ -57,5 +58,7 @@ async def test_get_results():
             await client.queue.put((f"https://example.com/{i}", f"response {i}"))
 
         results = await client.get_results(batch_size=3)
-        expected_results = [(f"https://example.com/{i}", f"response {i}") for i in range(3)]
+        expected_results = [
+            (f"https://example.com/{i}", f"response {i}") for i in range(3)
+        ]
         assert results == expected_results

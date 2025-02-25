@@ -50,9 +50,7 @@ class FileHandler(WebScraper):
 
             await self._queue.join()  # Ensure all queued images are processed
 
-            self._logger.info(
-                "Queue fully processed, stopping workers..."
-            )
+            self._logger.info("Queue fully processed, stopping workers...")
 
             self._stop_event.set()
             await asyncio.gather(*workers)
