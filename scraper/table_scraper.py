@@ -7,13 +7,6 @@ from client.http_client import AsyncHttpClient
 from db.animals_db import AnimalsInMemoryDB
 from scraper.web_scraper import WebScraper
 
-# Configure logging
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    filename="wiki_scrape.log",
-)
-
 
 class AnimalTableScraper(WebScraper):
     URL = "https://en.wikipedia.org/wiki/List_of_animal_names"
@@ -39,19 +32,19 @@ class AnimalTableScraper(WebScraper):
 
     async def run(self):
         """Runs the Wikipedia scraping process."""
-        self._logger.info("[AnimalTableScraper] Starting run()")
+        self._logger.info("Starting run()")
 
         soup = await self._fetch_wikipedia_page()
         if soup:
             await self._scrap_animal_table(soup)
 
         self._logger.info(
-            "[AnimalTableScraper] Finished processing, setting stop event."
+            "Finished processing, setting stop event."
         )
 
         self._stop_event.set()  # Ensure this scraper stops
 
-        self._logger.info("[AnimalTableScraper] Exiting run()")
+        self._logger.info("Exiting run()")
 
     async def _fetch_wikipedia_page(self):
         """Fetches the Wikipedia page and parses it using BeautifulSoup."""
@@ -120,7 +113,7 @@ class AnimalTableScraper(WebScraper):
             return
 
         animal_name = animal_link.text.strip()
-        self._logger.info(f"[AnimalTableScraper] Adding {animal_name} to queue")
+        self._logger.debug(f"Adding {animal_name} to queue")
 
         # Extract collateral adjectives
         collateral_adjectives = self._extract_collateral_adjectives(
