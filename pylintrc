@@ -31,7 +31,8 @@ disable=
     broad-exception-caught,
     logging-fstring-interpolation,
     global-statement,
-    redefined-outer-name
+    redefined-outer-name,
+    protected-access
 
 [tool.pylint.variables]
 ignored-argument-names = _.*|^ignored_|^unused_
