@@ -10,8 +10,9 @@ from scraper.web_scraper import WebScraper
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s - %(levelname)s - %(message)s",
-    filename='wiki_scrape.log',
+    filename="wiki_scrape.log",
 )
+
 
 class AnimalTableScraper(WebScraper):
     URL = "https://en.wikipedia.org/wiki/List_of_animal_names"
@@ -19,13 +20,21 @@ class AnimalTableScraper(WebScraper):
     COLLATERAL_ADJECTIVE_COLUMN = "Collateral adjective"
     EMPTY_COLUMN = "—"
 
-    def __init__(self, http_client: AsyncHttpClient, db: AnimalsInMemoryDB, queue: asyncio.Queue, max_concurrent_requests: int = 10):
+    def __init__(
+        self,
+        http_client: AsyncHttpClient,
+        db: AnimalsInMemoryDB,
+        queue: asyncio.Queue,
+        max_concurrent_requests: int = 10,
+    ):
         super().__init__()
         self._http_client = http_client
         self._db = db
         self._queue = queue
         self._logger = logging.getLogger(__name__)
-        self._semaphore = asyncio.Semaphore(max_concurrent_requests)  # Limit concurrent requests
+        self._semaphore = asyncio.Semaphore(
+            max_concurrent_requests
+        )  # Limit concurrent requests
 
     async def run(self):
         """Runs the Wikipedia scraping process."""
@@ -37,7 +46,9 @@ class AnimalTableScraper(WebScraper):
             await self._scrap_animal_table(soup)
 
         print("[AnimalTableScraper] Finished processing, setting stop event.")
-        self._logger.info("[AnimalTableScraper] Finished processing, setting stop event.")
+        self._logger.info(
+            "[AnimalTableScraper] Finished processing, setting stop event."
+        )
 
         self._stop_event.set()  # Ensure this scraper stops
 
@@ -66,10 +77,14 @@ class AnimalTableScraper(WebScraper):
             self._stop_event.set()  # Signal that scraping is complete
             return
 
-        headers = [header.text.strip() for header in animals_table.find_all('th')]
-        collateral_adjectives_column_index = self._get_collateral_adjectives_column_index(headers)
+        headers = [header.text.strip() for header in animals_table.find_all("th")]
+        collateral_adjectives_column_index = (
+            self._get_collateral_adjectives_column_index(headers)
+        )
         if collateral_adjectives_column_index is None:
-            self._logger.warning(f"Collateral adjectives column '{self.COLLATERAL_ADJECTIVE_COLUMN}' was not found")
+            self._logger.warning(
+                f"Collateral adjectives column '{self.COLLATERAL_ADJECTIVE_COLUMN}' was not found"
+            )
             self._stop_event.set()  # Signal completion to avoid indefinite hang
             return
 
@@ -82,14 +97,20 @@ class AnimalTableScraper(WebScraper):
         batch_size = 10  # Process in batches
         for i in range(0, len(rows), batch_size):
             tasks = []
-            for row in rows[i:i + batch_size]:
+            for row in rows[i : i + batch_size]:
                 cells = row.find_all(["td"])
                 if len(cells) > collateral_adjectives_column_index:
-                    task = asyncio.create_task(self._process_animal_row(cells, collateral_adjectives_column_index))
+                    task = asyncio.create_task(
+                        self._process_animal_row(
+                            cells, collateral_adjectives_column_index
+                        )
+                    )
                     tasks.append(task)
 
             if tasks:
-                await asyncio.gather(*tasks)  # Ensure all tasks complete before moving forward
+                await asyncio.gather(
+                    *tasks
+                )  # Ensure all tasks complete before moving forward
 
         self._logger.info("Finished processing animal table")
         self._stop_event.set()  # Ensure the scraper signals completion
@@ -105,7 +126,9 @@ class AnimalTableScraper(WebScraper):
         self._logger.info(f"[AnimalTableScraper] Adding {animal_name} to queue")
 
         # Extract collateral adjectives
-        collateral_adjectives = self._extract_collateral_adjectives(cells[collateral_adjectives_column_index])
+        collateral_adjectives = self._extract_collateral_adjectives(
+            cells[collateral_adjectives_column_index]
+        )
         for adjective in collateral_adjectives:
             self._db.insert_animal_to_collateral_adjectives(adjective, animal_name)
 
@@ -118,7 +141,11 @@ class AnimalTableScraper(WebScraper):
 
     def _get_collateral_adjectives_column_index(self, headers: list[str]) -> int | None:
         """Gets the column index for collateral adjectives."""
-        return headers.index(self.COLLATERAL_ADJECTIVE_COLUMN) if self.COLLATERAL_ADJECTIVE_COLUMN in headers else None
+        return (
+            headers.index(self.COLLATERAL_ADJECTIVE_COLUMN)
+            if self.COLLATERAL_ADJECTIVE_COLUMN in headers
+            else None
+        )
 
     def _extract_collateral_adjectives(self, cell) -> list[str]:
         """Extracts collateral adjectives from a cell."""

@@ -1,11 +1,14 @@
+"""An async client"""
 import asyncio
-from typing import Any, Coroutine
 
 import aiohttp
 from yarl import URL
 
 
 class AsyncHttpClient:
+    """
+    An asynchronous http client.
+    """
     def __init__(self, max_connections: int = 10):
         self.session: aiohttp.ClientSession = None
         self.max_connections = max_connections
@@ -21,7 +24,9 @@ class AsyncHttpClient:
         """Ensure session closure."""
         await self.session.close()
 
-    async def fetch(self, url: str, is_image=False) -> tuple[str, str] | tuple[URL, bytes] | str:
+    async def fetch(
+        self, url: str, is_image=False
+    ) -> tuple[str, str] | tuple[URL, bytes] | str:
         """Fetch a URL and return its response or error."""
         print(f"[AsyncHttpClient] Fetching {url}")
 
@@ -38,9 +43,9 @@ class AsyncHttpClient:
         except asyncio.TimeoutError:
             print(f"[AsyncHttpClient] Timeout fetching {url}")
             return "Error: Timeout"
-        except Exception as e:
+        except Exception as e: # pylint: disable=broad-exception-caught
             print(f"[AsyncHttpClient] Failed to fetch {url}: {e}")
-            return f"Error: {e}", ''
+            return f"Error: {e}", ""
 
     async def get_result(self):
         """

@@ -35,7 +35,9 @@ async def scrape_data():
         print("Created HTTP clients")
 
         table_scraper = AnimalTableScraper(client, db, queue_animals_pages)
-        page_scraper = AnimalPageScraper(client, client_image, db, queue_animals_pages, queue_images)
+        page_scraper = AnimalPageScraper(
+            client, client_image, db, queue_animals_pages, queue_images
+        )
         file_handler = FileHandler(client_image, db, queue_images)
 
         print("Initialized scrapers")

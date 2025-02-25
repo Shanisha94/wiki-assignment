@@ -15,14 +15,24 @@ BACKOFF_MULTIPLIER = 2  # Multiplier for exponential backoff
 
 
 class FileHandler(WebScraper):
-    def __init__(self, http_client: AsyncHttpClient, db: AnimalsInMemoryDB, queue = asyncio.Queue(), max_concurrent_downloads: int = 10):
+    def __init__(
+        self,
+        http_client: AsyncHttpClient,
+        db: AnimalsInMemoryDB,
+        queue=asyncio.Queue(),
+        max_concurrent_downloads: int = 10,
+    ):
         super().__init__()
         self._http_client = http_client
         self._logger = logging.getLogger(__name__)
         self._db = db
         self._queue = queue
-        self._semaphore = asyncio.Semaphore(max_concurrent_downloads)  # Limit concurrent downloads
-        self._existing_images = self.get_existing_images(tempfile.gettempdir())  # Use a set for quick lookups
+        self._semaphore = asyncio.Semaphore(
+            max_concurrent_downloads
+        )  # Limit concurrent downloads
+        self._existing_images = self.get_existing_images(
+            tempfile.gettempdir()
+        )  # Use a set for quick lookups
 
     async def run(self):
         """Ensure FileHandler waits for image URLs before processing."""
@@ -44,7 +54,9 @@ class FileHandler(WebScraper):
             await self._queue.join()  # Ensure all queued images are processed
 
             print("[FileHandler] Queue fully processed, stopping workers...")
-            self._logger.info("[FileHandler] Queue fully processed, stopping workers...")
+            self._logger.info(
+                "[FileHandler] Queue fully processed, stopping workers..."
+            )
 
             self._stop_event.set()
             await asyncio.gather(*workers)
@@ -57,7 +69,9 @@ class FileHandler(WebScraper):
         while not self._stop_event.is_set():
             try:
                 results = await asyncio.gather(
-                    *[self._http_client.get_result() for _ in range(10)]  # Fetch multiple images at once
+                    *[
+                        self._http_client.get_result() for _ in range(10)
+                    ]  # Fetch multiple images at once
                 )
                 for result in results:
                     await self._queue.put(result)  # Add images to the queue
@@ -66,7 +80,9 @@ class FileHandler(WebScraper):
 
     def get_existing_images(self, directory: str) -> set:
         """Retrieve all image filenames in the directory and store them in a set."""
-        return {file.name for file in Path(directory).glob("*.jpg")}  # Store as str for quick lookup
+        return {
+            file.name for file in Path(directory).glob("*.jpg")
+        }  # Store as str for quick lookup
 
     async def _image_worker(self):
         """Worker that processes image downloads from the queue."""
@@ -92,11 +108,13 @@ class FileHandler(WebScraper):
         print("[FileHandler] Exiting _image_worker")
         self._logger.info("[FileHandler] Exiting _image_worker")
 
-    async def _save_image_locally(self, image_url: str, image_data: bytes)-> None:
+    async def _save_image_locally(self, image_url: str, image_data: bytes) -> None:
         """Downloads and saves an image asynchronously with minimal blocking."""
         animal_name = self._db.get_animal_name_by_url(image_url)
         if not animal_name:
-            self._logger.warning(f"Could not find animal name for image url: {image_url}")
+            self._logger.warning(
+                f"Could not find animal name for image url: {image_url}"
+            )
             return
 
         local_file_path = Path(tempfile.gettempdir(), f"{animal_name}.jpg")

@@ -1,6 +1,13 @@
+"""Animal Page Scraper Module
+
+This module defines the AnimalPageScraper class, responsible for fetching and processing
+animal pages using asynchronous HTTP requests and an in-memory database.
+"""
+
 import asyncio
 import logging
 import random
+from typing import Optional
 
 from bs4 import BeautifulSoup
 from db.animals_db import AnimalsInMemoryDB
@@ -13,160 +20,134 @@ BACKOFF_MULTIPLIER = 2  # Multiplier for exponential backoff
 
 
 class AnimalPageScraper(WebScraper):
-    def __init__(self, http_client: AsyncHttpClient, http_client_image: AsyncHttpClient, db: AnimalsInMemoryDB, input_queue = asyncio.Queue(), output_queue = asyncio.Queue(),
-                 max_concurrent_requests: int = 10):
+    """Scrapes animal pages asynchronously and processes images."""
+
+    def __init__(
+            self,
+            http_client: AsyncHttpClient,
+            http_client_image: AsyncHttpClient,
+            db: AnimalsInMemoryDB,
+            input_queue: Optional[asyncio.Queue] = None,
+            output_queue: Optional[asyncio.Queue] = None,
+            max_concurrent_requests: int = 10,
+    ):
         super().__init__()
         self._logger = logging.getLogger(__name__)
         self._http_client_animal_page = http_client
         self._http_client_image = http_client_image
         self._db = db
-        self._input_queue = input_queue
-        self._output_queue = output_queue
+        self._input_queue = input_queue or asyncio.Queue()
+        self._output_queue = output_queue or asyncio.Queue()
         self._semaphore = asyncio.Semaphore(max_concurrent_requests)
-        self._stop_event = asyncio.Event()  # Ensuring stop signal for workers
+        self._stop_event = asyncio.Event()
 
     async def run(self):
-        """Ensure the scraper waits for data before processing."""
-        print("[AnimalPageScraper] Waiting for data in queue...")
+        """Ensures the scraper waits for data before processing."""
         self._logger.info("[AnimalPageScraper] Waiting for data in queue...")
 
         while self._http_client_animal_page.queue.empty():
-            print("[AnimalPageScraper] Still waiting...")
+            self._logger.info("[AnimalPageScraper] Still waiting...")
             await asyncio.sleep(1)
 
-        print("[AnimalPageScraper] Data available! Starting processing.")
         self._logger.info("[AnimalPageScraper] Data available! Starting processing.")
 
         async with asyncio.TaskGroup() as tg:
             tg.create_task(self._fetch_animal_pages())
-
             workers = [tg.create_task(self._page_worker()) for _ in range(10)]
-
             await self._input_queue.join()
-
-            print("[AnimalPageScraper] Queue fully processed, stopping workers...")
-            self._logger.info("[AnimalPageScraper] Queue fully processed, stopping workers...")
-
             self._stop_event.set()
-            self._logger.info("[AnimalPageScraper] Stop event set, awaiting workers...")
             await asyncio.gather(*workers)
-            self._logger.info("[AnimalPageScraper] Workers stopped.")
 
-        print("[AnimalPageScraper] Exiting run()")
         self._logger.info("[AnimalPageScraper] Exiting run()")
 
     async def _fetch_animal_pages(self):
         """Fetches animal pages and enqueues them for workers."""
-        print("[AnimalPageScraper] Starting _fetch_animal_pages")
         self._logger.info("[AnimalPageScraper] Starting _fetch_animal_pages")
 
         while not self._stop_event.is_set():
             try:
-                # Fetch batch of results
                 results = await self._http_client_animal_page.get_results(batch_size=10)
-
                 if not results:
-                    print("[AnimalPageScraper] No results received, stopping fetch loop.")
-                    self._logger.warning("[AnimalPageScraper] No results received, stopping fetch loop.")
-                    break  # Stop if no more results are available
+                    self._logger.warning(
+                        "[AnimalPageScraper] No results received, stopping fetch loop."
+                    )
+                    break
 
-                print(f"[AnimalPageScraper] Fetched {len(results)} animal pages")
-                self._logger.info(f"[AnimalPageScraper] Fetched {len(results)} animal pages")
+                self._logger.info(
+                    "[AnimalPageScraper] Fetched %d animal pages", len(results)
+                )
 
-                # Debug what we received
-                for result in results:
-                    if not result or len(result) < 2:
-                        print(f"[AnimalPageScraper] Invalid result received: {result}")
-                        continue  # Skip bad results
-
-                    url, response = result
-                    print(f"[AnimalPageScraper] Adding {url} to queue")
-                    await self._output_queue.put((url, response))  # **Ensure tasks are enqueued!**
+                for url, response in results:
+                    if not url or not response:
+                        self._logger.warning(
+                            "[AnimalPageScraper] Invalid result received: %s", result
+                        )
+                        continue
+                    await self._output_queue.put((url, response))
                     self._input_queue.task_done()
 
-            except Exception as e:
-                self._logger.error(f"Error fetching animal page: {e}")
-                print(f"[AnimalPageScraper] Error: {e}")
+            except asyncio.TimeoutError:
+                self._logger.warning("[AnimalPageScraper] Timeout fetching pages")
+            except Exception as exc:
+                self._logger.error("Error fetching animal page: %s", exc)
 
-        print("[AnimalPageScraper] Finished fetching pages, exiting.")
         self._logger.info("[AnimalPageScraper] Finished fetching pages, exiting.")
 
     async def _page_worker(self):
         """Processes animal pages from the queue with retry logic and backoff."""
-        print("[AnimalPageScraper] Starting _page_worker")
         self._logger.info("[AnimalPageScraper] Starting _page_worker")
-
-        attempts = 0
-        backoff = INITIAL_BACKOFF
 
         while not self._stop_event.is_set() or not self._output_queue.empty():
             try:
                 item = await asyncio.wait_for(self._output_queue.get(), timeout=2)
-                attempts = 0  # Reset attempts on success
             except asyncio.TimeoutError:
-                logging.warning(
-                    f"[AnimalPageScraper] Timeout waiting for output queue, attempt {attempts + 1}/{MAX_ATTEMPTS}"
-                )
-                attempts += 1
-                if attempts >= MAX_ATTEMPTS:
-                    logging.error("[AnimalPageScraper] Max retry attempts reached, giving up")
-                    break
-                await asyncio.sleep(backoff + random.uniform(0, 0.5))
-                backoff *= BACKOFF_MULTIPLIER
-                continue  # Skip the rest of the loop and retry
+                self._logger.warning("[AnimalPageScraper] Timeout waiting for output queue")
+                continue
 
-            if item is None:
-                break  # Ensure worker exits if no more items
+            if not item:
+                break
 
             url, response = item
-
-            print(f"[AnimalPageScraper] Processing {url}")
-            self._logger.info(f"[AnimalPageScraper] Processing {url}")
+            self._logger.info("[AnimalPageScraper] Processing %s", url)
 
             await self._process_page(url, response)
+            self._output_queue.task_done()
 
-            self._output_queue.task_done()  # Call task_done() only after successfully processing
+            self._logger.info("[AnimalPageScraper] Finished processing %s", url)
 
-            print(f"[AnimalPageScraper] Finished processing {url}")
-            self._logger.info(f"[AnimalPageScraper] Finished processing {url}")
-
-        print("[AnimalPageScraper] Exiting _page_worker")
         self._logger.info("[AnimalPageScraper] Exiting _page_worker")
 
     async def _process_page(self, url: str, response: str):
         """Processes an individual animal page and fetches the image URL."""
-        animal_name = url.split('/')[-1]
-        self._logger.info(f"[AnimalPageScraper] Extracting image of {animal_name}")
+        animal_name = url.split("/")[-1]
+        self._logger.info("[AnimalPageScraper] Extracting image of %s", animal_name)
         image_url = await self._extract_image_url(response, animal_name)
 
         if image_url:
             self._db.insert_image_url(image_url, animal_name)
-            asyncio.create_task(self._submit_image(image_url))  # Non-blocking
+            asyncio.create_task(self._submit_image(image_url))
 
     async def _submit_image(self, image_url: str):
         """Handles async submission of images with proper error handling."""
         try:
             await self._http_client_image.submit_urls([image_url], is_image=True)
-        except Exception as e:
-            self._logger.error(f"Failed to submit image URL {image_url}: {e}")
+        except Exception as exc:
+            self._logger.error("Failed to submit image URL %s: %s", image_url, exc)
 
-    async def _extract_image_url(self, html_page: str, animal_name: str) -> str | None:
+    async def _extract_image_url(self, html_page: str, animal_name: str) -> Optional[str]:
         """Extracts the first available image URL from the page."""
-        self._logger.info(f"Fetching image for {animal_name}")
-        image_tag = None
-        if html_page:
-            soup = BeautifulSoup(html_page, "html.parser")
-            infobox = soup.find("table", {"class": "infobox"})
-            if infobox:
-                image_tag = infobox.find("img")
-                if image_tag:
-                    image_url = "https:" + image_tag.get("src")
-                    self._logger.info(f"Found infobox image for {animal_name}: {image_url}")
-                    return image_url
+        self._logger.info("Fetching image for %s", animal_name)
+        if not html_page:
+            return None
 
-            if not image_tag:
-                self._logger.warning(f"No image found for {animal_name}")
-                return None
+        soup = BeautifulSoup(html_page, "html.parser")
+        infobox = soup.find("table", {"class": "infobox"})
+        image_tag = infobox.find("img") if infobox else None
 
-        return "https:" + image_tag.get("src")
+        if image_tag:
+            image_url = "https:" + image_tag.get("src")
+            self._logger.info("Found infobox image for %s: %s", animal_name, image_url)
+            return image_url
 
+        self._logger.warning("No image found for %s", animal_name)
+        return None
