@@ -39,21 +39,18 @@ class AnimalTableScraper(WebScraper):
 
     async def run(self):
         """Runs the Wikipedia scraping process."""
-        print("[AnimalTableScraper] Starting run()")
         self._logger.info("[AnimalTableScraper] Starting run()")
 
         soup = await self._fetch_wikipedia_page()
         if soup:
             await self._scrap_animal_table(soup)
 
-        print("[AnimalTableScraper] Finished processing, setting stop event.")
         self._logger.info(
             "[AnimalTableScraper] Finished processing, setting stop event."
         )
 
         self._stop_event.set()  # Ensure this scraper stops
 
-        print("[AnimalTableScraper] Exiting run()")
         self._logger.info("[AnimalTableScraper] Exiting run()")
 
     async def _fetch_wikipedia_page(self):
@@ -123,7 +120,6 @@ class AnimalTableScraper(WebScraper):
             return
 
         animal_name = animal_link.text.strip()
-        print(f"[AnimalTableScraper] Adding {animal_name} to queue")
         self._logger.info(f"[AnimalTableScraper] Adding {animal_name} to queue")
 
         # Extract collateral adjectives
